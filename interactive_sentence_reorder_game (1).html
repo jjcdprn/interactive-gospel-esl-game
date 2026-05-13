@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ESL Word Order Game | 영어 문장 배열 게임</title>
+  <style>
+    :root {
+      --card: #ffffff;
+      --primary: #2563eb;
+      --primary-dark: #1e40af;
+      --success: #16a34a;
+      --success-dark: #15803d;
+      --danger: #dc2626;
+      --warning: #f59e0b;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #dbe3ef;
+      --neutral-word: #475569;
+      --soft-green: #ecfdf5;
+      --soft-blue: #eff6ff;
+      --soft-yellow: #fffbeb;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, "Noto Sans KR", sans-serif;
+      background: linear-gradient(135deg, #dcfce7, #eff6ff, #f8fafc);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .game-wrapper {
+      width: 100%;
+      max-width: 980px;
+      background: var(--card);
+      border-radius: 24px;
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.15);
+      padding: 28px;
+    }
+
+    .header { text-align: center; margin-bottom: 22px; }
+
+    .header h1 {
+      margin: 0;
+      font-size: 2rem;
+      color: var(--success-dark);
+      line-height: 1.3;
+    }
+
+    .header p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+
+    .language-note {
+      display: inline-block;
+      margin-top: 10px;
+      background: var(--soft-green);
+      color: #166534;
+      border: 1px solid #bbf7d0;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      margin-top: 20px;
+    }
+
+    .category-card {
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: #f8fafc;
+      padding: 18px;
+      cursor: pointer;
+      text-align: left;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border 0.15s ease;
+    }
+
+    .category-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+      border-color: #86efac;
+    }
+
+    .category-card h3 {
+      margin: 0 0 8px;
+      color: var(--success-dark);
+      font-size: 1.12rem;
+    }
+
+    .category-card p {
+      margin: 0 0 10px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .category-card .count {
+      display: inline-block;
+      background: var(--soft-blue);
+      color: var(--primary-dark);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-box {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .stat-label {
+      display: block;
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-bottom: 4px;
+      line-height: 1.35;
+    }
+
+    .stat-value {
+      font-weight: 700;
+      font-size: 1.15rem;
+      color: var(--success-dark);
+    }
+
+    .selected-category {
+      background: var(--soft-green);
+      border: 1px solid #bbf7d0;
+      color: #166534;
+      border-radius: 16px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.45;
+    }
+
+    .hint-card {
+      background: var(--soft-blue);
+      border-left: 6px solid var(--primary);
+      padding: 16px 18px;
+      border-radius: 16px;
+      margin-bottom: 16px;
+    }
+
+    .hint-label {
+      font-weight: 700;
+      color: var(--primary-dark);
+      margin-bottom: 6px;
+    }
+
+    .korean-hint {
+      font-size: 1.2rem;
+      line-height: 1.5;
+      word-break: keep-all;
+    }
+
+    .help-card {
+      display: none;
+      background: var(--soft-yellow);
+      border: 1px solid #fde68a;
+      color: #92400e;
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      line-height: 1.5;
+      font-weight: 700;
+    }
+
+    .drop-zone {
+      min-height: 98px;
+      background: #f8fafc;
+      border: 2px dashed #94a3b8;
+      border-radius: 18px;
+      padding: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .drop-zone.empty::before {
+      content: "Click words below to build the sentence. / 아래 단어를 클릭해서 문장을 만드세요.";
+      color: #94a3b8;
+      font-weight: 700;
+      line-height: 1.5;
+    }
+
+    .word-bank {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      min-height: 90px;
+      margin-bottom: 20px;
+    }
+
+    .word {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 16px;
+      background: var(--neutral-word);
+      color: white;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease;
+      box-shadow: 0 5px 12px rgba(71, 85, 105, 0.22);
+    }
+
+    .word:hover { transform: translateY(-2px); background: #334155; }
+    .word.selected { background: #64748b; box-shadow: none; }
+    .word.correct-sequence { background: var(--success); box-shadow: 0 5px 12px rgba(22, 163, 74, 0.25); }
+    .word.wrong-sequence { background: #64748b; }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 18px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 14px;
+      padding: 12px 18px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+      line-height: 1.35;
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+    .btn-check { background: var(--success); color: white; }
+    .btn-reset { background: #e5e7eb; color: #111827; }
+    .btn-start { background: var(--primary); color: white; }
+    .btn-hint { background: var(--warning); color: white; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    .message {
+      min-height: 38px;
+      text-align: center;
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    .message.success { color: var(--success); }
+    .message.error { color: var(--danger); }
+
+    .progress-area { margin-top: 16px; }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 6px;
+    }
+
+    .progress-bar {
+      height: 12px;
+      background: #e5e7eb;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--primary), var(--success));
+      transition: width 0.3s ease;
+    }
+
+    .final-screen { text-align: center; padding: 30px 10px; }
+    .final-screen h2 { color: var(--success); font-size: 2rem; margin-bottom: 10px; }
+
+    .sentence-preview {
+      margin-top: 20px;
+      background: #f8fafc;
+      border-radius: 18px;
+      padding: 18px;
+      text-align: left;
+    }
+
+    .sentence-preview h3 { margin-top: 0; color: var(--primary-dark); }
+    .sentence-preview ol { padding-left: 22px; line-height: 1.7; }
+
+    @media (max-width: 760px) {
+      .game-wrapper { padding: 20px; }
+      .stats, .category-grid { grid-template-columns: 1fr; }
+      .header h1 { font-size: 1.55rem; }
+      .korean-hint { font-size: 1.08rem; }
+      .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="game-wrapper">
+    <section id="categoryScreen" class="screen active">
+      <div class="header">
+        <h1>ESL Word Order Challenge<br />영어 문장 배열 게임</h1>
+        <p>Choose a category, read the Korean hint, and arrange the English words correctly.<br />카테고리를 고르고, 한국어 힌트를 보며 영어 단어를 바른 순서로 배열하세요.</p>
+        <div class="language-note">Correct sequence turns green. / 맞는 순서는 초록색으로 표시됩니다.</div>
+      </div>
+      <div id="categoryGrid" class="category-grid"></div>
+    </section>
+
+    <section id="gameScreen" class="screen">
+      <div class="header">
+        <h1>ESL Word Order Challenge<br />영어 문장 배열 게임</h1>
+        <p>Complete each sentence to unlock the next one.<br />문장을 완성하면 다음 문장이 열립니다.</p>
+      </div>
+
+      <div class="selected-category" id="selectedCategoryText"></div>
+
+      <div class="stats">
+        <div class="stat-box">
+          <span class="stat-label">Sentence<br />문장</span>
+          <span class="stat-value" id="levelText">1 / 1</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">Score<br />점수</span>
+          <span class="stat-value" id="scoreText">0</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">Hint Cost<br />힌트 감점</span>
+          <span class="stat-value" id="hintCostText">-30</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">Speed Bonus<br />속도 보너스</span>
+          <span class="stat-value" id="speedText">Ready</span>
+        </div>
+      </div>
+
+      <div class="hint-card">
+        <div class="hint-label">Korean Hint / 한국어 힌트</div>
+        <div class="korean-hint" id="koreanHint"></div>
+      </div>
+
+      <div class="help-card" id="helpCard"></div>
+
+      <div id="answerZone" class="drop-zone empty"></div>
+      <div id="wordBank" class="word-bank"></div>
+
+      <div class="controls">
+        <button class="btn btn-check" id="checkBtn">Check / 확인</button>
+        <button class="btn btn-hint" id="hintBtn">Hint -30 / 힌트 보기</button>
+        <button class="btn btn-reset" id="undoBtn">Undo / 되돌리기</button>
+        <button class="btn btn-reset" id="changeCategoryBtn">Categories / 카테고리</button>
+        <button class="btn btn-danger" id="restartBtn">Restart / 다시 시작</button>
+      </div>
+
+      <div class="message" id="messageBox"></div>
+
+      <div class="progress-area">
+        <div class="progress-label">
+          <span>Category Progress / 카테고리 진행률</span>
+          <span id="progressText">0%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="finalScreen" class="screen final-screen">
+      <h2>Great Job! 잘했어요!</h2>
+      <p>You completed this category.<br />이 카테고리를 모두 완성했습니다.</p>
+      <h3 id="finalScore"></h3>
+      <div class="controls">
+        <button class="btn btn-start" onclick="backToCategories()">Choose Another Category / 다른 카테고리</button>
+        <button class="btn btn-reset" onclick="restartCurrentCategory()">Play This Category Again / 다시 하기</button>
+      </div>
+      <div class="sentence-preview">
+        <h3>Sentences Practiced / 연습한 문장</h3>
+        <ol id="sentenceList"></ol>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const categories = [
+      {
+        id: "origin",
+        title: "The Origin of Sin / 죄의 시작",
+        description: "Adam, original sin, and being born sinners. / 아담, 원죄, 죄인으로 태어남",
+        sentences: [
+          {
+            english: "Sin came into the world through one man Adam.",
+            korean: "한 사람 아담으로 말미암아 죄가 세상에 들어왔습니다."
+          },
+          {
+            english: "We're born sinners not because of what we've done but because of Adam.",
+            korean: "우리는 우리가 한 일 때문이 아니라 아담 때문에 죄인으로 태어났습니다."
+          },
+          {
+            english: "Even before we did anything wrong we were already sinners right from the womb.",
+            korean: "우리는 어떤 죄도 짓기 전, 모태에서부터 이미 죄인이었습니다."
+          }
+        ]
+      },
+      {
+        id: "god-humanity",
+        title: "God and Humanity / 하나님과 인간",
+        description: "Humanity before sin and the heart of God. / 죄 이전의 인간과 하나님의 마음",
+        sentences: [
+          {
+            english: "In the beginning man was sinless he and God shared one heart.",
+            korean: "본래 사람은 죄가 없었고 하나님과 한 마음이었습니다."
+          },
+          {
+            english: "Man didn't live by his own thinking he lived through the mind of God.",
+            korean: "사람은 자신의 생각으로 살지 않았고 하나님의 생각으로 살았습니다."
+          }
+        ]
+      },
+      {
+        id: "nature",
+        title: "Nature of Sin / 죄의 본성",
+        description: "Sin is deeper than actions. / 죄는 행동보다 더 깊은 문제입니다.",
+        sentences: [
+          {
+            english: "Sin isn't just about breaking rules or doing bad things it goes much deeper than that.",
+            korean: "죄는 단순히 규칙을 어기거나 나쁜 일을 하는 것이 아니라 훨씬 더 깊은 문제입니다."
+          },
+          {
+            english: "What God really sees isn't just our actions it's the sinful nature inside us.",
+            korean: "하나님이 보시는 것은 우리의 행동만이 아니라 우리 안의 죄의 본성입니다."
+          },
+          {
+            english: "At our core we are completely made up of sin there's nothing good in us by nature.",
+            korean: "우리의 본질은 죄로 가득하며 본성적으로 우리 안에는 선한 것이 없습니다."
+          }
+        ]
+      },
+      {
+        id: "heart",
+        title: "The Human Heart / 사람의 마음",
+        description: "The heart, thoughts, and deception. / 마음, 생각, 속임",
+        sentences: [
+          {
+            english: "When Adam ate the fruit the ruler of the human heart switched from God to Satan.",
+            korean: "아담이 선악과를 먹었을 때 인간 마음의 주인이 하나님에서 사탄으로 바뀌었습니다."
+          },
+          {
+            english: "The human heart is more corrupt and deceitful than anything else in this world.",
+            korean: "사람의 마음은 이 세상의 어떤 것보다 더 부패하고 거짓됩니다."
+          },
+          {
+            english: "God doesn't just see your actions He sees every thought and right to the very core of your heart.",
+            korean: "하나님은 당신의 행동만 보시는 것이 아니라 모든 생각과 마음의 중심까지 보십니다."
+          }
+        ]
+      },
+      {
+        id: "separation",
+        title: "Separation from God / 하나님과의 단절",
+        description: "Sin cuts the connection between God and man. / 죄는 하나님과 인간의 연결을 끊습니다.",
+        sentences: [
+          {
+            english: "Because of sin man became cut off from God completely disconnected.",
+            korean: "죄로 인해 인간은 하나님에게서 끊어져 완전히 단절되었습니다."
+          },
+          {
+            english: "There's a wall between us and God and that wall is sin.",
+            korean: "우리와 하나님 사이에는 담이 있고 그 담은 죄입니다."
+          }
+        ]
+      },
+      {
+        id: "born-again",
+        title: "Born Again / 거듭남",
+        description: "Why we need a new birth. / 왜 다시 태어나야 하는가",
+        sentences: [
+          {
+            english: "Because we are sinners by nature we can't just improve ourselves we have to die to the old self and be completely reborn.",
+            korean: "우리는 본래 죄인이기 때문에 단순히 자신을 개선하는 것이 아니라 옛 사람은 죽고 완전히 다시 태어나야 합니다."
+          },
+          {
+            english: "And that's exactly why Jesus said you must be born again.",
+            korean: "그래서 예수님은 우리가 반드시 거듭나야 한다고 말씀하셨습니다."
+          }
+        ]
+      },
+      {
+        id: "salvation",
+        title: "Salvation / 구원",
+        description: "Forgiveness, salvation, and relationship with God. / 죄 사함, 구원, 하나님과의 관계",
+        sentences: [
+          {
+            english: "No matter how much you go to church give money or try to be a good person if your sins aren't forgiven you have nothing to do with God.",
+            korean: "아무리 교회를 많이 다니고 헌금을 하고 착한 사람이 되려고 해도 죄가 사해지지 않으면 하나님과 아무 상관이 없습니다."
+          },
+          {
+            english: "But from God's perspective every single person good or bad is trapped in sin and needs to be saved.",
+            korean: "하지만 하나님의 관점에서 모든 사람은 착하든 악하든 죄 안에 갇혀 있으며 구원을 받아야 합니다."
+          },
+          {
+            english: "Before anything else can be right between you and God the problem of sin has to be dealt with.",
+            korean: "하나님과의 관계에서 다른 어떤 것보다 먼저 죄의 문제가 해결되어야 합니다."
+          }
+        ]
+      }
+    ];
+
+    const BASE_POINTS = 100;
+    const MAX_SPEED_BONUS = 100;
+    const HINT_COST = 30;
+
+    let selectedCategory = null;
+    let currentIndex = 0;
+    let score = 0;
+    let selectedWords = [];
+    let availableWords = [];
+    let sentenceStartTime = null;
+    let hintUsedThisRound = false;
+
+    const categoryScreen = document.getElementById("categoryScreen");
+    const gameScreen = document.getElementById("gameScreen");
+    const finalScreen = document.getElementById("finalScreen");
+    const categoryGrid = document.getElementById("categoryGrid");
+    const selectedCategoryText = document.getElementById("selectedCategoryText");
+    const levelText = document.getElementById("levelText");
+    const scoreText = document.getElementById("scoreText");
+    const hintCostText = document.getElementById("hintCostText");
+    const speedText = document.getElementById("speedText");
+    const koreanHint = document.getElementById("koreanHint");
+    const helpCard = document.getElementById("helpCard");
+    const answerZone = document.getElementById("answerZone");
+    const wordBank = document.getElementById("wordBank");
+    const messageBox = document.getElementById("messageBox");
+    const checkBtn = document.getElementById("checkBtn");
+    const hintBtn = document.getElementById("hintBtn");
+    const undoBtn = document.getElementById("undoBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const changeCategoryBtn = document.getElementById("changeCategoryBtn");
+    const progressFill = document.getElementById("progressFill");
+    const progressText = document.getElementById("progressText");
+    const finalScore = document.getElementById("finalScore");
+    const sentenceList = document.getElementById("sentenceList");
+
+    checkBtn.addEventListener("click", checkAnswer);
+    hintBtn.addEventListener("click", showHint);
+    undoBtn.addEventListener("click", undoLastWord);
+    restartBtn.addEventListener("click", restartCurrentCategory);
+    changeCategoryBtn.addEventListener("click", backToCategories);
+
+    function showScreen(screen) {
+      [categoryScreen, gameScreen, finalScreen].forEach(section => section.classList.remove("active"));
+      screen.classList.add("active");
+    }
+
+    function renderCategories() {
+      categoryGrid.innerHTML = "";
+      categories.forEach(category => {
+        const card = document.createElement("button");
+        card.className = "category-card";
+        card.innerHTML = `
+          <h3>${category.title}</h3>
+          <p>${category.description}</p>
+          <span class="count">${category.sentences.length} sentences / ${category.sentences.length}문장</span>
+        `;
+        card.onclick = () => startCategory(category.id);
+        categoryGrid.appendChild(card);
+      });
+    }
+
+    function startCategory(categoryId) {
+      selectedCategory = categories.find(category => category.id === categoryId);
+      currentIndex = 0;
+      score = 0;
+      scoreText.textContent = "0";
+      selectedCategoryText.textContent = selectedCategory.title;
+      showScreen(gameScreen);
+      loadSentence();
+    }
+
+    function normalizeSentence(sentence) {
+      return sentence
+        .replace(/[.,!?;:]/g, "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+    }
+
+    function splitWords(sentence) {
+      return sentence.replace(/[.,!?;:]/g, "").split(" ");
+    }
+
+    function shuffle(array) {
+      const copy = [...array];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function loadSentence() {
+      selectedWords = [];
+      hintUsedThisRound = false;
+      sentenceStartTime = Date.now();
+      speedText.textContent = "Fast = More";
+      messageBox.textContent = "";
+      messageBox.className = "message";
+      helpCard.style.display = "none";
+      helpCard.textContent = "";
+      hintBtn.disabled = false;
+
+      const current = selectedCategory.sentences[currentIndex];
+      koreanHint.textContent = current.korean;
+      levelText.textContent = `${currentIndex + 1} / ${selectedCategory.sentences.length}`;
+      hintCostText.textContent = `-${HINT_COST}`;
+      availableWords = shuffle(splitWords(current.english));
+
+      renderWords();
+      updateProgress();
+    }
+
+    function getCorrectWords() {
+      return splitWords(selectedCategory.sentences[currentIndex].english);
+    }
+
+    function renderWords() {
+      answerZone.innerHTML = "";
+      wordBank.innerHTML = "";
+
+      const correctWords = getCorrectWords();
+      answerZone.classList.toggle("empty", selectedWords.length === 0);
+
+      selectedWords.forEach((word, index) => {
+        const button = document.createElement("button");
+        const isCorrectSequence = word.toLowerCase() === correctWords[index]?.toLowerCase();
+        button.className = `word selected ${isCorrectSequence ? "correct-sequence" : "wrong-sequence"}`;
+        button.textContent = word;
+        button.title = isCorrectSequence ? "Correct position / 맞는 위치" : "Check position / 위치 확인";
+        button.onclick = () => removeSelectedWord(index);
+        answerZone.appendChild(button);
+      });
+
+      availableWords.forEach((word, index) => {
+        const button = document.createElement("button");
+        button.className = "word";
+        button.textContent = word;
+        button.onclick = () => selectWord(index);
+        wordBank.appendChild(button);
+      });
+    }
+
+    function selectWord(index) {
+      selectedWords.push(availableWords[index]);
+      availableWords.splice(index, 1);
+      renderWords();
+    }
+
+    function removeSelectedWord(index) {
+      availableWords.push(selectedWords[index]);
+      selectedWords.splice(index, 1);
+      renderWords();
+    }
+
+    function undoLastWord() {
+      if (selectedWords.length === 0) return;
+      availableWords.push(selectedWords.pop());
+      renderWords();
+    }
+
+    function showHint() {
+      if (hintUsedThisRound) return;
+
+      score = Math.max(0, score - HINT_COST);
+      scoreText.textContent = score;
+      hintUsedThisRound = true;
+      hintBtn.disabled = true;
+
+      const correctWords = getCorrectWords();
+      const nextIndex = selectedWords.length;
+      const nextWord = correctWords[nextIndex] || correctWords[0];
+      const firstThreeWords = correctWords.slice(0, 3).join(" ");
+
+      helpCard.innerHTML = `Hint / 힌트: The next word is <strong>"${nextWord}"</strong>.<br />문장의 시작: <strong>${firstThreeWords} ...</strong>`;
+      helpCard.style.display = "block";
+      messageBox.textContent = `Hint used. ${HINT_COST} points deducted. / 힌트를 사용해서 ${HINT_COST}점 감점되었습니다.`;
+      messageBox.className = "message error";
+    }
+
+    function calculateSpeedBonus() {
+      const elapsedSeconds = Math.floor((Date.now() - sentenceStartTime) / 1000);
+      return Math.max(0, MAX_SPEED_BONUS - elapsedSeconds * 5);
+    }
+
+    function checkAnswer() {
+      const userAnswer = normalizeSentence(selectedWords.join(" "));
+      const correctAnswer = normalizeSentence(selectedCategory.sentences[currentIndex].english);
+
+      if (userAnswer === correctAnswer) {
+        const speedBonus = calculateSpeedBonus();
+        const earned = BASE_POINTS + speedBonus;
+        score += earned;
+        scoreText.textContent = score;
+        speedText.textContent = `+${speedBonus}`;
+
+        messageBox.textContent = `Correct! +${earned} points. Next sentence unlocked. / 정답입니다! 다음 문장이 열렸습니다.`;
+        messageBox.className = "message success";
+
+        currentIndex++;
+        updateProgress();
+
+        if (currentIndex >= selectedCategory.sentences.length) {
+          setTimeout(showFinalScreen, 800);
+        } else {
+          setTimeout(loadSentence, 800);
+        }
+      } else {
+        messageBox.textContent = "Not yet. Green words are in the correct sequence. / 아직 아닙니다. 초록색 단어는 순서가 맞습니다.";
+        messageBox.className = "message error";
+      }
+    }
+
+    function updateProgress() {
+      const percent = Math.round((currentIndex / selectedCategory.sentences.length) * 100);
+      progressFill.style.width = `${percent}%`;
+      progressText.textContent = `${percent}%`;
+    }
+
+    function showFinalScreen() {
+      showScreen(finalScreen);
+      finalScore.textContent = `Final Score / 최종 점수: ${score}`;
+      sentenceList.innerHTML = "";
+
+      selectedCategory.sentences.forEach(item => {
+        const li = document.createElement("li");
+        li.innerHTML = `<strong>${item.english}</strong><br><span>${item.korean}</span>`;
+        sentenceList.appendChild(li);
+      });
+    }
+
+    function restartCurrentCategory() {
+      if (!selectedCategory) return backToCategories();
+      currentIndex = 0;
+      score = 0;
+      scoreText.textContent = "0";
+      speedText.textContent = "Ready";
+      showScreen(gameScreen);
+      loadSentence();
+    }
+
+    function backToCategories() {
+      selectedCategory = null;
+      currentIndex = 0;
+      score = 0;
+      selectedWords = [];
+      availableWords = [];
+      hintUsedThisRound = false;
+      showScreen(categoryScreen);
+    }
+
+    renderCategories();
+  </script>
+</body>
+</html>
